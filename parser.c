@@ -61,6 +61,11 @@ void parse_file ( char * filename,
   char line[256];
   clear_screen(s);
 
+  color c;
+  c.red = 255;
+  c.blue = 255;
+  c.green = 255;
+
   if ( strcmp(filename, "stdin") == 0 ) 
     f = stdin;
   else
@@ -69,6 +74,69 @@ void parse_file ( char * filename,
   while ( fgets(line, 255, f) != NULL ) {
     line[strlen(line)-1]='\0';
     printf(":%s:\n",line);
+
+    if (!(strcmp(line, "line"))){
+      double x0, x1, y0, y1, z0, z1;
+      fgets(line, 255, f);
+      sscanf(line, "%lf %lf %lf %lf %lf %lf", &x0, &y0, &z0, &x1, &y1, &z1);
+      add_edge(edges, x0, y0, z0, x1, y1, z1);
+    }
+
+    if (!(strcmp(line, "ident"))){
+      ident(transform);
+    }
+    
+    if (!(strcmp(line, "scale"))){
+      double x, y, z;
+      fgets(line, 255, f);
+      sscanf(line, "%lf %lf %lf", &x, &y, &z);
+      matrix_mult(make_scale(x, y, z), transform);
+    }
+
+    if (!(strcmp(line, "move"))){
+      double x, y, z;
+      fgets(line, 255, f);
+      sscanf(line, "%lf %lf %lf", &x, &y, &z);
+      matrix_mult(make_translate(x, y, z), transform);
+    }
+
+    if (!(strcmp(line, "rotate"))){
+      double theta;
+      char axis;
+      fgets(line, 255, f);
+      sscanf(line, "%c %lf", &axis, &theta);
+      theta = theta * (M_PI / 180);
+
+      if (axis == 'x') {
+        matrix_mult(make_rotX(theta), transform);
+      }
+      if (axis == 'y') {
+        matrix_mult(make_rotY(theta), transform);
+      }
+      if (axis == 'z') {
+        matrix_mult(make_rotZ(theta), transform);
+      }
+    }
+    
+    if (!(strcmp(line, "apply"))){
+      matrix_mult(transform, edges);
+    }
+
+    if (!(strcmp(line, "display"))){
+      clear_screen(s);
+      draw_lines(edges, s, c);
+      display(s);
+    }
+
+    if (!(strcmp(line, "save"))){
+      fgets(line, 255, f);
+      clear_screen(s);
+      draw_lines(edges, s, c);
+      save_extension(s, line);
+    }
+
+    if(!(strcmp(line, "quit"))){
+      exit(0);
+    }
   }
 }
-  
